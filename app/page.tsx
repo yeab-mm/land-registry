@@ -106,12 +106,7 @@ export default function HomePage() {
                 <option value="am">አማርኛ</option>
               </select>
             </div>
-            <Link href="/help" className="text-gray-500 hover:text-gray-700 transition-colors text-sm">
-              {t.help}
-            </Link>
-            <Link href="/about" className="text-gray-500 hover:text-gray-700 transition-colors text-sm">
-              {t.about}
-            </Link>
+           
           </div>
         </div>
       </nav>
@@ -168,12 +163,7 @@ export default function HomePage() {
                   {t.createAccount}
                 </Link>
                 
-                <Link
-                  href="/guest"
-                  className="block w-full text-green-100 px-6 py-3 rounded-lg text-sm hover:text-white transition-colors text-center border border-green-400/30 hover:border-green-400/60"
-                >
-                  {t.guest}
-                </Link>
+              
               </div>
 
               <p className="mt-8 text-xs text-green-200">
