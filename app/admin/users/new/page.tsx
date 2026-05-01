@@ -14,6 +14,9 @@ import {
   KeyIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export default function AddNewUserPage() {
   const router = useRouter();
@@ -76,16 +79,45 @@ export default function AddNewUserPage() {
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setShowSuccess(true);
+    try {
+      const token = localStorage.getItem('token');
       
-      // Redirect after success
-      setTimeout(() => {
-        router.push('/admin/users');
-      }, 2000);
-    }, 1500);
+      const response = await fetch(`${API_URL}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          kebeleId: formData.kebeleId,
+          role: formData.role,
+          status: formData.status,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowSuccess(true);
+        toast.success(t('userCreatedSuccess'));
+        
+        // Redirect after 2 seconds
+        setTimeout(() => {
+          router.push('/admin/users');
+        }, 2000);
+      } else {
+        toast.error(data.error || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to connect to server');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -368,7 +400,7 @@ export default function AddNewUserPage() {
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t ${cn('border-gray-700', 'border-gray-200')}">
+          <div className={`flex justify-end gap-3 pt-4 border-t ${cn('border-gray-700', 'border-gray-200')}`}>
             <Link
               href="/admin/users"
               className={`

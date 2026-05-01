@@ -14,26 +14,8 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
-const MOCK_USERS = [
-  {
-    email: 'admin@land.gov.et',
-    password: 'admin123',
-    role: 'admin',
-    name: 'Admin User'
-  },
-  {
-    email: 'officer@land.gov.et',
-    password: 'officer123',
-    role: 'officer',
-    name: 'Land Officer'
-  },
-  {
-    email: 'citizen@land.gov.et',
-    password: 'citizen123',
-    role: 'citizen',
-    name: 'Citizen User'
-  }
-]
+// API URL - change this to your backend URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,34 +31,64 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     
-    // Simulate API call
-    setTimeout(() => {
-      const user = MOCK_USERS.find(
-        u => u.email === formData.email && u.password === formData.password
-      )
-      
-      if (user) {
+    try {
+      // Call your backend API
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.token) {
+        // Save to localStorage
         localStorage.setItem('isLoggedIn', 'true')
-        localStorage.setItem('userEmail', user.email)
-        localStorage.setItem('userRole', user.role)
-        localStorage.setItem('userName', user.name)
+        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userRole', data.user.role)
+        localStorage.setItem('userName', data.user.fullName)
+        localStorage.setItem('token', data.token)
         
-        toast.success(`Welcome ${user.name}!`)
+        // Save remember me preference
+        if (formData.rememberMe) {
+          localStorage.setItem('rememberedEmail', formData.email)
+        } else {
+          localStorage.removeItem('rememberedEmail')
+        }
         
-        // Use router.push instead of window.location for better SPA navigation
-        if (user.role === 'admin') {
+        toast.success(`Welcome ${data.user.fullName}!`)
+        
+        // Redirect based on role
+        if (data.user.role === 'admin') {
           router.push('/admin')
-        } else if (user.role === 'officer') {
+        } else if (data.user.role === 'officer') {
           router.push('/officer')
         } else {
           router.push('/dashboard')
         }
       } else {
-        toast.error('Invalid credentials')
+        toast.error(data.error || 'Invalid credentials')
         setLoading(false)
       }
-    }, 1500)
+    } catch (error) {
+      console.error('Login error:', error)
+      toast.error('Cannot connect to server. Make sure backend is running on port 5000')
+      setLoading(false)
+    }
   }
+
+  // Load remembered email on component mount
+  useState(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    if (rememberedEmail) {
+      setFormData(prev => ({ ...prev, email: rememberedEmail, rememberMe: true }))
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -180,9 +192,6 @@ export default function LoginPage() {
             )}
           </button>
 
-        
-
-         
           <p className="text-center text-green-200">
             Don't have an account?{' '}
             <Link href="/register" className="text-white hover:text-green-100 font-medium">
